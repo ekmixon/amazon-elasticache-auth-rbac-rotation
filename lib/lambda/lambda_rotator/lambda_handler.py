@@ -60,20 +60,35 @@ def lambda_handler(event, context):
     # Make sure the version is staged correctly
     metadata = service_client.describe_secret(SecretId=arn)
     if not metadata['RotationEnabled']:
-        logger.error("Secret %s is not enabled for rotation" % arn)
-        raise ValueError("Secret %s is not enabled for rotation" % arn)
+        logger.error(f"Secret {arn} is not enabled for rotation")
+        raise ValueError(f"Secret {arn} is not enabled for rotation")
     versions = metadata['VersionIdsToStages']
     if token not in versions:
-        logger.error("Secret version %s has no stage for rotation of secret %s." % (token, arn))
-        raise ValueError("Secret version %s has no stage for rotation of secret %s." % (token, arn))
+        logger.error(
+            f"Secret version {token} has no stage for rotation of secret {arn}."
+        )
+
+        raise ValueError(
+            f"Secret version {token} has no stage for rotation of secret {arn}."
+        )
+
     if "AWSCURRENT" in versions[token]:
-        logger.info("Secret version %s already set as AWSCURRENT for secret %s." % (token, arn))
+        logger.info(
+            f"Secret version {token} already set as AWSCURRENT for secret {arn}."
+        )
+
         return
     elif "AWSPENDING" not in versions[token]:
-        logger.error("Secret version %s not set as AWSPENDING for rotation of secret %s." % (token, arn))
-        raise ValueError("Secret version %s not set as AWSPENDING for rotation of secret %s." % (token, arn))
+        logger.error(
+            f"Secret version {token} not set as AWSPENDING for rotation of secret {arn}."
+        )
 
-    logger.info("***STEP IS*** "+step)
+        raise ValueError(
+            f"Secret version {token} not set as AWSPENDING for rotation of secret {arn}."
+        )
+
+
+    logger.info(f"***STEP IS*** {step}")
     if step == "createSecret":
         create_secret(service_client, arn, token)
 
@@ -113,7 +128,7 @@ def create_secret(service_client, arn, token):
     # Now try to get the secret version, if that fails, put a new secret
     try:
         service_client.get_secret_value(SecretId=arn, VersionId=token, VersionStage="AWSPENDING")
-        logger.info("createSecret: Successfully retrieved secret for %s." % arn)
+        logger.info(f"createSecret: Successfully retrieved secret for {arn}.")
     except service_client.exceptions.ResourceNotFoundException:
         # Get exclude characters from environment variable
         exclude_characters = os.environ['EXCLUDE_CHARACTERS'] if 'EXCLUDE_CHARACTERS' in os.environ else '/@"\'\\'
@@ -122,7 +137,9 @@ def create_secret(service_client, arn, token):
 
         # Put the secret
         service_client.put_secret_value(SecretId=arn, ClientRequestToken=token, SecretString=passwd['RandomPassword'], VersionStages=['AWSPENDING'])
-        logger.info("createSecret: Successfully put secret for ARN %s and version %s." % (arn, token))
+        logger.info(
+            f"createSecret: Successfully put secret for ARN {arn} and version {token}."
+        )
 
 
 def set_secret(service_client, arn, token):
@@ -151,8 +168,8 @@ def set_secret(service_client, arn, token):
     response = service_client.get_secret_value(SecretId=arn, VersionId=token, VersionStage="AWSPENDING")
 
     logger.info("setSecret!")
-    logger.info("arn "+arn)
-    logger.info("token "+token)
+    logger.info(f"arn {arn}")
+    logger.info(f"token {token}")
 
     client = boto3.client('elasticache')
 
@@ -175,7 +192,7 @@ def set_secret(service_client, arn, token):
 
     logger.info(response)
 
-    logger.info("setSecret: Successfully set secret for %s." % arn)
+    logger.info(f"setSecret: Successfully set secret for {arn}.")
 
 
 def test_secret(service_client, arn, token):
@@ -211,7 +228,7 @@ def test_secret(service_client, arn, token):
         response = redis_server.client_list()
         logger.info(response)
     except:
-        logger.error("test: Unabled to secret for %s." % arn)
+        logger.error(f"test: Unabled to secret for {arn}.")
         client = boto3.client('elasticache')
         response = client.modify_replication_group(
           ApplyImmediately=True,
@@ -220,7 +237,7 @@ def test_secret(service_client, arn, token):
 
           AuthTokenUpdateStrategy='DELETE'
         )
-    logger.info("test: Successfully test secret for %s." % arn)
+    logger.info(f"test: Successfully test secret for {arn}.")
     # This is where the secret should be tested against the service
 
 
@@ -263,14 +280,19 @@ def finish_secret(service_client, arn, token):
         if "AWSCURRENT" in metadata["VersionIdsToStages"][version]:
             if version == token:
                 # The correct version is already marked as current, return
-                logger.info("finishSecret: Version %s already marked as AWSCURRENT for %s" % (version, arn))
+                logger.info(
+                    f"finishSecret: Version {version} already marked as AWSCURRENT for {arn}"
+                )
+
                 return
             current_version = version
             break
 
     # Finalize by staging the secret version current
     service_client.update_secret_version_stage(SecretId=arn, VersionStage="AWSCURRENT", MoveToVersionId=token, RemoveFromVersionId=current_version)
-    logger.info("finishSecret: Successfully set AWSCURRENT stage to version %s for secret %s." % (token, arn))
+    logger.info(
+        f"finishSecret: Successfully set AWSCURRENT stage to version {token} for secret {arn}."
+    )
 
 def is_cluster_available(service_client, clusterId):
   response = service_client.describe_replication_groups(

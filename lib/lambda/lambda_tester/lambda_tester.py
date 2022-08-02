@@ -34,17 +34,17 @@ def lambda_handler_single_auth(event, context):
         ssl=True)
 
     try:
-      time_now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-      redis_server.set("time", time_now)
-      print ("Successfully set key 'time' to "+time_now)
+        time_now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        redis_server.set("time", time_now)
+        print ("Successfully set key 'time' to "+time_now)
     except Exception as e:
-      print ("Exception trying to SET entry "+str(e))
+        print(f"Exception trying to SET entry {str(e)}")
 
     try:
-      result = redis_server.get("time")
-      print ("Successfully retrieved key 'time' "+str(result))
+        result = redis_server.get("time")
+        print ("Successfully retrieved key 'time' "+str(result))
     except Exception as e:
-      print ("Exception trying to GET entry "+str(e))
+        print(f"Exception trying to GET entry {str(e)}")
 
 def lambda_handler(event, context):
     client = boto3.client('secretsmanager')
@@ -62,16 +62,16 @@ def lambda_handler(event, context):
         ssl=True)
 
     try:
-      time_now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-      redis_server.set("time", time_now)
-      print ("Successfully set key 'time' to "+time_now)
+        time_now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        redis_server.set("time", time_now)
+        print ("Successfully set key 'time' to "+time_now)
     except Exception as e:
-      print ("Exception trying to SET entry "+str(e))
+        print(f"Exception trying to SET entry {str(e)}")
 
     try:
-      result = redis_server.get("time")
-      print ("Successfully retrieved key 'time' "+str(result))
+        result = redis_server.get("time")
+        print ("Successfully retrieved key 'time' "+str(result))
     except Exception as e:
-      print ("Exception trying to GET entry "+str(e))
+        print(f"Exception trying to GET entry {str(e)}")
 
 
